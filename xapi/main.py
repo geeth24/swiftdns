@@ -20,3 +20,10 @@ def read_root():
 
 # Include the Cloudflare router
 app.include_router(cf.router, prefix="/cf")
+
+# Debugging Middleware
+@app.middleware("http")
+async def cors_debug(request, call_next):
+    response = await call_next(request)
+    print(f"Request: {request.method} {request.url} - CORS Headers: {response.headers}")
+    return response
