@@ -64,7 +64,7 @@ def create_token(
     client = get_cloudflare_client(api_email=api_email, api_key=api_key)
     try:
         response = client.user.tokens.create(
-            name="swift-dns-api-token",
+            name=f"SwiftDNS API Token {datetime.datetime.now()}",
             policies=[
                 {
                     "effect": "allow",
