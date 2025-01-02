@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import ZoneCards from '@/components/zone-cards';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Zone } from '../../../../typings/zone';
+import { Zone } from '../../../typings/zone';
 import { Button } from '@/components/ui/button';
 import { GearIcon } from '@radix-ui/react-icons';
 import {
@@ -98,7 +98,6 @@ export default function Page() {
           }
           let headers = new Headers();
           headers.append('Content-Type', 'application/json');
-          console.log('Token:', token);
           headers.append('api-token', records?.token as string);
           let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cf/zones`, {
             method: 'GET',

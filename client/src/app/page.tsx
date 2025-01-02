@@ -12,8 +12,8 @@ export default function Component() {
               <span className="text-primary"> with SwiftDNS</span>
             </h1>
             <p className="max-w-[600px] text-muted-foreground md:text-xl">
-              Effortlessly manage your DNS records for Cloudflare and Vercel. Save time, reduce
-              errors, and streamline your workflow.
+              Effortlessly manage your DNS records for Cloudflare. Save time, reduce errors, and
+              streamline your workflow.
             </p>
           </div>
           <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -40,7 +40,7 @@ export default function Component() {
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-foreground">Vercel compatibility</span>
+              <span className="text-sm font-medium text-foreground">User-friendly interface</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle2 className="h-5 w-5 text-primary" />

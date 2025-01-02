@@ -7,10 +7,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { DNSRecords } from '../../typings/dns';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DNSRecords } from '../typings/dns';
 
 export default function CFDNSRecords({ records }: { records: DNSRecords }) {
   const handleAddRecord = () => {

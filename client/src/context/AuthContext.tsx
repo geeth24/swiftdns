@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       setUser(userCredential.user);
       toast.success('Login successful');
-      router.push('/providers');
+      router.push('/providers/cf');
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       setUser(userCredential.user);
       toast.success('User created successfully');
-      router.push('/providers');
+      router.push('/providers/cf');
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await signInWithPopup(auth, provider);
       setUser(result.user);
       toast.success('Login with Google successful');
-      router.push('/providers');
+      router.push('/providers/cf');
     } catch (error: any) {
       toast.error(error.message);
     }
