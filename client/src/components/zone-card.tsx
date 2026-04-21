@@ -1,16 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Globe, Server, Calendar, DollarSign, User } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowUpRight } from 'lucide-react';
 import { Zone } from '@/typings/zone';
 
 interface ZoneCardProps {
@@ -18,64 +8,66 @@ interface ZoneCardProps {
 }
 
 export default function ZoneCard({ zone }: ZoneCardProps) {
+  const live = zone.status === 'active' && !zone.paused;
+  const created = new Date(zone.created_on).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+
   return (
     <Link href={`/providers/cf/${zone.id}`}>
-      <Card className="h-full transition-all hover:shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Globe className="h-5 w-5 text-primary" />
+      <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-lg border border-border/60 bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-xl">
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+              <span
+                className={`size-1.5 rounded-full ${
+                  live ? 'bg-primary' : 'bg-muted-foreground/40'
+                }`}
+              />
+              {zone.paused ? 'paused' : zone.status}
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {zone.type}
+            </span>
+          </div>
+
+          <h3 className="mb-1 truncate font-serif text-3xl leading-tight tracking-tight text-foreground">
             {zone.name}
-          </CardTitle>
-          <CardDescription>{zone.account.name}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <InfoItem icon={Server} label="Status" value={zone.status} />
-            <InfoItem
-              icon={Calendar}
-              label="Created"
-              value={new Date(zone.created_on).toLocaleDateString()}
-            />
-            <InfoItem icon={DollarSign} label="Plan" value={zone.plan.name} />
-            <InfoItem icon={User} label="Owner" value={zone.owner.name || 'N/A'} />
-          </div>
-          <div className="mt-4">
-            <h4 className="mb-2 text-sm font-semibold">Name Servers:</h4>
-            <ScrollArea className="h-20 w-full rounded-md border p-2">
-              <ul className="text-sm">
-                {zone.name_servers.map((ns, index) => (
-                  <li key={index} className="text-muted-foreground">
-                    {ns}
-                  </li>
-                ))}
-              </ul>
-            </ScrollArea>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Badge variant={zone.paused ? 'destructive' : 'default'}>
-            {zone.paused ? 'Paused' : 'Active'}
-          </Badge>
-          <Badge variant="outline">{zone.type}</Badge>
-        </CardFooter>
-      </Card>
+          </h3>
+          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            {zone.account.name}
+          </p>
+        </div>
+
+        <div className="mt-6 space-y-2 border-t border-border/60 pt-4 font-mono text-[11px]">
+          <Row label="plan" value={zone.plan.name} />
+          <Row label="owner" value={zone.owner.name || '—'} />
+          <Row label="created" value={created} />
+          <Row label="ns" value={`${zone.name_servers?.[0] ?? 'cloudflare'}`} />
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            Open records
+          </span>
+          <ArrowUpRight
+            className="size-4 text-muted-foreground transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary"
+            strokeWidth={1.5}
+          />
+        </div>
+      </article>
     </Link>
   );
 }
 
-interface InfoItemProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-}
-
-function InfoItem({ icon: Icon, label, value }: InfoItemProps) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <span className="text-sm">
-        <span className="font-medium">{label}:</span> {value}
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
       </span>
+      <span className="truncate text-foreground">{value}</span>
     </div>
   );
 }

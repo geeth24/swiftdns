@@ -1,16 +1,17 @@
 'use client';
+
 import { useState } from 'react';
+import Link from 'next/link';
+import { ArrowUpRight, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
-export default function Component() {
+export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
-
-  const { user, isLoading, login, loginWithGoogle, createUser, forgotPassword } = useAuth();
+  const { login, loginWithGoogle, createUser, forgotPassword } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,152 +19,251 @@ export default function Component() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
       await login(email, password);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
     try {
       await loginWithGoogle();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
       await createUser(email, password);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleForgot = async () => {
+    if (!email) {
+      setError('Enter your email first');
+      return;
+    }
+    setError('');
     try {
       await forgotPassword(email);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left side with logo */}
-      <div className="hidden w-1/2 bg-primary/10 lg:flex lg:items-center lg:justify-center">
-        <div className="relative flex aspect-square w-full max-w-[400px] items-center justify-center rounded-xl bg-background/80 p-6 backdrop-blur-sm">
-          <svg
-            className="h-52 w-52 text-primary"
-            viewBox="0 0 778 1024"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M4.71838 566.143C4.71838 555.571 8.86481 545.143 17.1577 534.857L437.09 24.4286C445.669 14.1429 454.82 7.85717 464.542 5.57145C474.265 3.28574 482.986 4.28574 490.708 8.57145C498.715 12.5715 504.291 19.1429 507.436 28.2857C510.582 37.4286 509.724 48.4286 504.863 61.2857L369.318 419.571H628.827C639.407 419.571 647.986 422.857 654.563 429.429C661.426 435.714 664.857 443.857 664.857 453.857C664.857 464.429 660.711 474.857 652.419 485.143L232.485 995.575C223.907 1005.86 214.757 1012.14 205.033 1014.43C195.311 1017 186.446 1016.15 178.439 1011.86C170.718 1007.85 165.285 1001.14 162.14 991.717C158.994 982.574 159.852 971.575 164.713 958.711L300.258 600.429H40.7493C30.4548 600.429 21.876 597.285 15.0129 591C8.14991 584.429 4.71838 576.143 4.71838 566.143Z"
-              className="fill-secondary-foreground"
-            />
-            <path
-              d="M114.527 566.143C114.527 555.571 118.674 545.143 126.966 534.857L546.899 24.4286C555.478 14.1429 564.628 7.85717 574.351 5.57145C584.074 3.28574 592.795 4.28574 600.516 8.57145C608.523 12.5715 614.1 19.1429 617.245 28.2857C620.391 37.4286 619.533 48.4286 614.672 61.2857L479.127 419.571H738.636C749.216 419.571 757.795 422.857 764.371 429.429C771.234 435.714 774.666 443.857 774.666 453.857C774.666 464.429 770.52 474.857 762.227 485.143L342.294 995.575C333.716 1005.86 324.565 1012.14 314.842 1014.43C305.12 1017 296.255 1016.15 288.248 1011.86C280.527 1007.85 275.094 1001.14 271.949 991.717C268.803 982.574 269.661 971.575 274.522 958.711L410.067 600.429H150.558C140.263 600.429 131.684 597.285 124.821 591C117.958 584.429 114.527 576.143 114.527 566.143Z"
-              className="fill-primary"
-            />
-          </svg>
-        </div>
-      </div>
+    <main className="relative min-h-dvh overflow-hidden bg-background pt-14 text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 [background-image:linear-gradient(hsl(var(--border))_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border))_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_65%)] opacity-40"
+      />
 
-      {/* Right side with sign-in form */}
-      <div className="relative flex w-full items-center justify-center lg:w-1/2">
-        <div className="w-full max-w-md space-y-8 px-4 sm:px-6">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-              {showSignUp ? 'Create Account' : 'Welcome Back'}
+      <div className="mx-auto grid min-h-[calc(100dvh-56px)] max-w-[1320px] grid-cols-1 px-6 lg:grid-cols-[1.05fr_1fr] lg:px-12">
+        <section className="flex flex-col justify-between border-border/60 py-12 lg:border-r lg:pr-16">
+          <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="relative inline-flex size-1.5">
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
+            </span>
+            Access · port 443
+          </div>
+
+          <div>
+            <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              ¶ 00 — {showSignUp ? 'new account' : 'sign in'}
+            </p>
+            <h1 className="font-serif text-6xl leading-[0.9] tracking-tight sm:text-7xl md:text-8xl">
+              {showSignUp ? (
+                <>
+                  First <span className="italic text-primary">resolve</span>. <br />
+                  Then route.
+                </>
+              ) : (
+                <>
+                  Welcome <br />
+                  <span className="italic text-primary">back.</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground">
-              {showSignUp ? 'Create an account to get started' : 'Sign in to your account'}
+            <p className="mt-8 max-w-md text-base leading-relaxed text-muted-foreground">
+              {showSignUp
+                ? 'Create an account to store your presets and Cloudflare credentials. Everything is scoped to your user.'
+                : 'Sign in to pick up where you left off. Your zones, presets, and saved IPs are waiting.'}
             </p>
           </div>
-          <form className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                placeholder="m@example.com"
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  required
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="sr-only">
-                    {showPassword ? 'Hide password' : 'Show password'}
-                  </span>
-                </Button>
-              </div>
-            </div>
-            <Button
-              className="w-full"
-              type="submit"
-              onClick={showSignUp ? handleSignUp : handleLogin}
-            >
-              {showSignUp ? 'Sign Up' : 'Sign In'}
-            </Button>
-          </form>
-          <div className="text-center text-sm">
-            <a className="underline" href="#">
-              Forgot your password?
-            </a>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-          <Button variant="outline" onClick={handleGoogleLogin} className="w-full">
-            Google
-          </Button>
 
-          <div className="flex justify-center gap-1 text-center text-sm">
-            {!showSignUp ? (
-              <p className="cursor-pointer" onClick={() => setShowSignUp(true)}>
-                Don&apos;t have an account? <span className="text-primary underline">Sign Up</span>
-              </p>
-            ) : (
-              <p className="cursor-pointer" onClick={() => setShowSignUp(false)}>
-                Already have an account? <span className="text-primary underline">Sign In</span>
-              </p>
-            )}
+          <div className="grid grid-cols-3 gap-4 border-t border-border/60 pt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <div>
+              <div className="text-foreground/80">v2.0</div>
+              <div>build 42.apr</div>
+            </div>
+            <div>
+              <div className="text-foreground/80">SOC 2</div>
+              <div>via cloudflare</div>
+            </div>
+            <div>
+              <div className="text-foreground/80">api</div>
+              <div>token only</div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <section className="flex items-center py-12 lg:pl-16">
+          <div className="w-full max-w-md">
+            <div className="mb-8 flex items-center justify-between border-b border-border/60 pb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <span>§ Auth · {showSignUp ? 'create' : 'login'}</span>
+              <span>01 / 01</span>
+            </div>
+
+            <form
+              onSubmit={showSignUp ? handleSignUp : handleLogin}
+              className="space-y-5"
+            >
+              <Field
+                label="Email"
+                id="email"
+                type="email"
+                placeholder="you@domain.com"
+                value={email}
+                onChange={(v) => setEmail(v)}
+              />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="password"
+                    className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+                  >
+                    Password
+                  </Label>
+                  {!showSignUp && (
+                    <button
+                      type="button"
+                      onClick={handleForgot}
+                      className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      Forgot?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    required
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 rounded-none border-0 border-b border-border/80 bg-transparent px-0 pr-10 font-mono text-[14px] shadow-none focus-visible:border-primary focus-visible:ring-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="size-4" strokeWidth={1.5} />
+                    ) : (
+                      <EyeIcon className="size-4" strokeWidth={1.5} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="border-l-2 border-destructive bg-destructive/5 px-3 py-2 font-mono text-[11px] text-destructive">
+                  ! {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                size="lg"
+                className="h-12 w-full rounded-full font-mono text-xs uppercase tracking-[0.18em]"
+              >
+                {showSignUp ? 'Create account' : 'Sign in'}
+                <ArrowUpRight className="ml-2 size-4" strokeWidth={1.5} />
+              </Button>
+            </form>
+
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border/60" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                or
+              </span>
+              <div className="h-px flex-1 bg-border/60" />
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={handleGoogleLogin}
+              className="h-12 w-full rounded-full border-border/60 font-mono text-xs uppercase tracking-[0.18em]"
+            >
+              Continue with Google
+            </Button>
+
+            <div className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              {!showSignUp ? (
+                <button onClick={() => setShowSignUp(true)}>
+                  No account? <span className="text-primary">Create one →</span>
+                </button>
+              ) : (
+                <button onClick={() => setShowSignUp(false)}>
+                  Have an account? <span className="text-primary">Sign in →</span>
+                </button>
+              )}
+            </div>
+
+            <p className="mt-10 text-center font-serif text-sm italic text-muted-foreground">
+              &ldquo;The best interface is the one you can trust.&rdquo;
+            </p>
+          </div>
+        </section>
       </div>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  id,
+  type = 'text',
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  id: string;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label
+        htmlFor={id}
+        className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+      >
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+        className="h-11 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[14px] shadow-none focus-visible:border-primary focus-visible:ring-0"
+      />
     </div>
   );
 }

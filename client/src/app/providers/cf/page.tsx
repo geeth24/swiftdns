@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import ZoneCards from '@/components/zone-cards';
-import { useAuth } from '@/context/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Zone } from '../../../typings/zone';
+import { useRouter } from 'next/navigation';
+import { EyeIcon, EyeOffIcon, PlusIcon, SettingsIcon, ZapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GearIcon } from '@radix-ui/react-icons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -15,10 +14,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { DNSType, useUserRecordData } from '@/context/UserRecordDataContext';
-import { EyeOffIcon, EyeIcon, PlusIcon } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -27,8 +22,11 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useRouter } from 'next/navigation';
-import SwiftDNSLogo from '@/components/swiftdns-logo';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import ZoneCards from '@/components/zone-cards';
+import { useAuth } from '@/context/AuthContext';
+import { DNSType, useUserRecordData } from '@/context/UserRecordDataContext';
+import { Zone } from '../../../typings/zone';
 
 export default function Page() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -46,6 +44,7 @@ export default function Page() {
   const [showToken, setShowToken] = useState(false);
   const [dnsTypes, setDnsTypes] = useState<DNSType[]>([]);
   const [ipAddresses, setIpAddresses] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
 
   const [dnsRecord, setDnsRecord] = useState({
     type: 'CNAME',
@@ -63,25 +62,8 @@ export default function Page() {
     setDnsRecord((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (value: string) => {
-    setDnsRecord((prev) => ({ ...prev, type: value }));
-  };
-
-  const handleSelectZoneChange = (value: string) => {
-    setDnsRecord((prev) => ({ ...prev, zone: value }));
-  };
-
-  const handleSelectContentChange = (value: string) => {
-    setDnsRecord((prev) => ({ ...prev, content: value }));
-  };
-
-  const handleSwitchChange = (checked: boolean) => {
-    setDnsRecord((prev) => ({ ...prev, proxied: checked }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(dnsRecord);
     addDNSRecord(dnsRecord);
     setQuickSheetOpen(false);
   };
@@ -91,87 +73,69 @@ export default function Page() {
       setLoading(true);
       if (user) {
         try {
-          let records = await getUserRecordData(user?.uid as string, 'cf');
-
+          const records = await getUserRecordData(user.uid, 'cf');
           if (records) {
-            setRecordsToState(records);
+            setEmail(records.email ?? '');
+            setApiKey(records.apikey ?? '');
+            setToken(records.token ?? '');
           }
-          let headers = new Headers();
+          const headers = new Headers();
           headers.append('Content-Type', 'application/json');
           headers.append('api-token', records?.token as string);
-          let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cf/zones`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cf/zones`, {
             method: 'GET',
-            headers: headers,
+            headers,
           });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
-          console.log(data);
           setZones(data);
-        } catch (error: any) {
-          console.error('Fetch error:', error.message);
-          setError(error.message);
+        } catch (err: any) {
+          setError(err.message);
         } finally {
           setLoading(false);
         }
       } else {
-        console.log('No user found');
         setLoading(false);
       }
     };
-
     fetchZones();
-    getDNSTypes().then((types) => setDnsTypes(types));
+    getDNSTypes().then(setDnsTypes);
     if (user) {
-      getIPAddresses(user.uid).then((ips) => {
-        setIpAddresses(ips);
-      });
+      getIPAddresses(user.uid).then(setIpAddresses);
     }
   }, [user]);
 
-  const setRecordsToState = (data: any) => {
-    setEmail(data.email);
-    setApiKey(data.apikey);
-    setToken(data.token);
-  };
-
   const createCFToken = async (email: string, apiKey: string) => {
     try {
-      let headers = new Headers();
+      const headers = new Headers();
       headers.append('Content-Type', 'application/json');
       headers.append('api-email', email);
       headers.append('api-key', apiKey);
-      let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cf/user/tokens`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cf/user/tokens`, {
         method: 'POST',
-        headers: headers,
+        headers,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (user) {
         createUserRecordData(user.uid, 'cf', { email, apikey: apiKey, token: data.value });
       }
       setToken(data.value);
-    } catch (error: any) {
-      console.error('Fetch error:', error.message);
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const addDNSRecord = async (record: any) => {
     try {
-      let headers = new Headers();
+      const headers = new Headers();
       headers.append('Content-Type', 'application/json');
       headers.append('api-token', token);
-      let response = await fetch(
+      const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/cf/zones/${record.zone}/dns_records`,
         {
           method: 'POST',
-          headers: headers,
+          headers,
           body: JSON.stringify({
             type: record.type,
             name: record.name,
@@ -181,172 +145,117 @@ export default function Page() {
           }),
         },
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log(data);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       router.push(`/providers/cf/${record.zone}`);
-    } catch (error: any) {
-      console.error('Fetch error:', error.message);
-      setError(error.message);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
+  const filtered = zones.filter((z) =>
+    z.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="container relative mx-auto px-4 py-16 md:px-6 md:py-24 lg:py-32">
-      <div className="">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-5xl xl:text-6xl/none">
-            Cloudflare Zones
-          </h1>
-          <div className="flex items-center space-x-2">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button size="lg">
-                  <GearIcon className="mr-2 h-5 w-5" />
-                  Settings
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Settings</SheetTitle>
-                  <SheetDescription>
-                    Add your email API key here. This key will be used for email notifications.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mb-2 space-y-2">
-                  <Label htmlFor="email-api-key" className="text-right">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className=""
-                  />
-                </div>
-                <div className="relative mb-2 space-y-2">
-                  <Label htmlFor="api-key" className="text-right">
-                    API Key
-                  </Label>
-                  <Input
-                    id="api-key"
-                    required
-                    type={showApiKey ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-2 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                  >
-                    {showApiKey ? (
-                      <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className="sr-only">{showApiKey ? 'Hide API key' : 'Show API key'}</span>
-                  </Button>
-                </div>
-                {token && (
-                  <div className="relative space-y-2">
-                    <Label htmlFor="api-key" className="text-right">
-                      Token
-                    </Label>
-                    <Input
-                      id="api-key"
-                      required
-                      type={showToken ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-2 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowToken(!showToken)}
-                    >
-                      {showToken ? (
-                        <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      <span className="sr-only">{showToken ? 'Hide token' : 'Show token'}</span>
-                    </Button>
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  <Button onClick={() => createCFToken(email, apiKey)} className="mt-4">
-                    Save
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
+    <main className="relative min-h-dvh bg-background pt-14 text-foreground">
+      <section className="mx-auto max-w-[1320px] px-6 py-12 lg:px-12 lg:py-16">
+        <div className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border/60 pb-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>§ Cloudflare · zones</span>
+          <span className="hidden h-3 w-px bg-border sm:block" />
+          <span>Issue 02 · 2026</span>
+          <span className="ml-auto inline-flex items-center gap-1.5">
+            <span
+              className={`size-1.5 rounded-full ${
+                token ? 'bg-primary' : 'bg-muted-foreground/40'
+              }`}
+            />
+            {token ? `${zones.length} zones` : 'Not configured'}
+          </span>
+        </div>
+
+        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              ¶ Zones
+            </p>
+            <h1 className="font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl md:text-7xl">
+              Every domain, <br />
+              <span className="italic text-primary">at a glance.</span>
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
             <Sheet open={quickSheetOpen} onOpenChange={setQuickSheetOpen}>
               <SheetTrigger asChild>
-                <Button size="lg" variant="outline">
-                  <SwiftDNSLogo className="w-24" />
+                <Button
+                  size="sm"
+                  className="h-10 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.18em]"
+                >
+                  <ZapIcon className="mr-1.5 size-3.5" strokeWidth={1.5} />
+                  Quick record
                 </Button>
               </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>SwiftDNS</SheetTitle>
-                  <SheetDescription>
-                    Quickly add a new DNS record to your Cloudflare account.
+              <SheetContent className="sm:max-w-md">
+                <SheetHeader className="space-y-2 border-b border-border/60 pb-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    § Quick · new record
+                  </p>
+                  <SheetTitle className="font-serif text-3xl leading-tight">
+                    Add a <span className="italic text-primary">record.</span>
+                  </SheetTitle>
+                  <SheetDescription className="font-mono text-[11px]">
+                    Push a new record directly to Cloudflare.
                   </SheetDescription>
                 </SheetHeader>
-                <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
-                    <Select onValueChange={handleSelectChange} defaultValue={dnsRecord.type}>
-                      <SelectTrigger>
+                <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                  <StackField label="Type">
+                    <Select
+                      onValueChange={(v) => setDnsRecord((p) => ({ ...p, type: v }))}
+                      defaultValue={dnsRecord.type}
+                    >
+                      <SelectTrigger className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus:ring-0">
                         <SelectValue placeholder="Select record type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {dnsTypes.map((type) => (
-                          <SelectItem key={type.type} value={type.type}>
-                            {type.type}
+                        {dnsTypes.map((t) => (
+                          <SelectItem key={t.type} value={t.type}>
+                            {t.type}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                  </StackField>
+
+                  <StackField label="Name">
                     <Input
                       id="name"
                       name="name"
                       value={dnsRecord.name}
                       onChange={handleInputChange}
-                      placeholder="e.g. www"
+                      placeholder="www"
+                      className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus-visible:border-primary focus-visible:ring-0"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="content">Content</Label>
+                  </StackField>
 
+                  <StackField label="Content">
                     {dnsRecord.type === 'CNAME' ? (
                       <Input
                         id="content"
                         name="content"
                         value={dnsRecord.content}
                         onChange={handleInputChange}
-                        placeholder="e.g. example.com"
+                        placeholder="example.com"
+                        className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus-visible:border-primary focus-visible:ring-0"
                       />
                     ) : (
                       <Select
-                        onValueChange={handleSelectContentChange}
+                        onValueChange={(v) =>
+                          setDnsRecord((p) => ({ ...p, content: v }))
+                        }
                         defaultValue={dnsRecord.content}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select record content" />
+                        <SelectTrigger className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus:ring-0">
+                          <SelectValue placeholder="Select saved IP" />
                         </SelectTrigger>
                         <SelectContent>
                           {ipAddresses.map((ip) => (
@@ -357,65 +266,199 @@ export default function Page() {
                         </SelectContent>
                       </Select>
                     )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="content">Zone</Label>
-                    <Select onValueChange={handleSelectZoneChange} defaultValue={dnsRecord.zone}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select record content" />
+                  </StackField>
+
+                  <StackField label="Zone">
+                    <Select
+                      onValueChange={(v) => setDnsRecord((p) => ({ ...p, zone: v }))}
+                      defaultValue={dnsRecord.zone}
+                    >
+                      <SelectTrigger className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus:ring-0">
+                        <SelectValue placeholder="Select zone" />
                       </SelectTrigger>
                       <SelectContent>
-                        {zones.map((zone) => (
-                          <SelectItem key={zone.id} value={zone.id}>
-                            {zone.name}
+                        {zones.map((z) => (
+                          <SelectItem key={z.id} value={z.id}>
+                            {z.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ttl">TTL</Label>
+                  </StackField>
+
+                  <StackField label="TTL · 1 = auto">
                     <Input
                       id="ttl"
                       name="ttl"
                       type="number"
                       value={dnsRecord.ttl}
                       onChange={handleInputChange}
-                      min="1"
+                      min={1}
+                      className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus-visible:border-primary focus-visible:ring-0"
                     />
-                    <p className="text-sm text-muted-foreground">1 is auto</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
+                  </StackField>
+
+                  <div className="flex items-center justify-between border-b border-border/80 pb-3">
+                    <Label
+                      htmlFor="proxied"
+                      className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground"
+                    >
+                      Proxied
+                    </Label>
                     <Switch
                       id="proxied"
                       checked={dnsRecord.proxied}
-                      onCheckedChange={handleSwitchChange}
+                      onCheckedChange={(c) => setDnsRecord((p) => ({ ...p, proxied: c }))}
                     />
-                    <Label htmlFor="proxied">Proxied</Label>
                   </div>
-                  <Button type="submit" className="w-full" onClick={handleSubmit}>
-                    Add DNS Record
+
+                  <Button
+                    type="submit"
+                    className="h-11 w-full rounded-full font-mono text-xs uppercase tracking-[0.18em]"
+                  >
+                    <PlusIcon className="mr-1.5 size-4" strokeWidth={1.5} />
+                    Add record
                   </Button>
                 </form>
               </SheetContent>
             </Sheet>
+
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 rounded-full border-border/60 px-4 font-mono text-[11px] uppercase tracking-[0.18em]"
+                >
+                  <SettingsIcon className="mr-1.5 size-3.5" strokeWidth={1.5} />
+                  Creds
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="sm:max-w-md">
+                <SheetHeader className="space-y-2 border-b border-border/60 pb-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    § Credentials
+                  </p>
+                  <SheetTitle className="font-serif text-3xl leading-tight">
+                    Cloudflare <span className="italic text-primary">link.</span>
+                  </SheetTitle>
+                  <SheetDescription className="font-mono text-[11px]">
+                    Email + global key → scoped DNS token.
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-5">
+                  <StackField label="Email">
+                    <Input
+                      id="settings-email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 font-mono text-[13px] shadow-none focus-visible:border-primary focus-visible:ring-0"
+                    />
+                  </StackField>
+                  <StackField label="API key">
+                    <div className="relative">
+                      <Input
+                        id="settings-key"
+                        type={showApiKey ? 'text' : 'password'}
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 pr-8 font-mono text-[13px] shadow-none focus-visible:border-primary focus-visible:ring-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                      >
+                        {showApiKey ? (
+                          <EyeOffIcon className="size-4" strokeWidth={1.5} />
+                        ) : (
+                          <EyeIcon className="size-4" strokeWidth={1.5} />
+                        )}
+                      </button>
+                    </div>
+                  </StackField>
+                  {token && (
+                    <StackField label="Token">
+                      <div className="relative">
+                        <Input
+                          id="settings-token"
+                          type={showToken ? 'text' : 'password'}
+                          value={token}
+                          readOnly
+                          className="h-10 rounded-none border-0 border-b border-border/80 bg-transparent px-0 pr-8 font-mono text-[13px] text-primary shadow-none focus-visible:border-primary focus-visible:ring-0"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowToken(!showToken)}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                        >
+                          {showToken ? (
+                            <EyeOffIcon className="size-4" strokeWidth={1.5} />
+                          ) : (
+                            <EyeIcon className="size-4" strokeWidth={1.5} />
+                          )}
+                        </button>
+                      </div>
+                    </StackField>
+                  )}
+                  <Button
+                    onClick={() => createCFToken(email, apiKey)}
+                    className="h-11 w-full rounded-full font-mono text-xs uppercase tracking-[0.18em]"
+                  >
+                    Save + generate
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
+
+        <div className="mb-6 flex items-center gap-4 border-b border-border/60 pb-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            Filter
+          </span>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="example.com"
+            className="h-8 flex-1 rounded-none border-0 bg-transparent px-0 font-mono text-[13px] shadow-none focus-visible:ring-0"
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            {filtered.length} / {zones.length}
+          </span>
+        </div>
+
         {loading ? (
-          <LoadingSpinner />
+          <div className="flex items-center justify-center py-20">
+            <LoadingSpinner />
+          </div>
+        ) : filtered.length > 0 ? (
+          <ZoneCards zones={filtered} />
         ) : (
-          <>
-            {zones.length > 0 ? (
-              <ZoneCards zones={zones} />
-            ) : (
-              <>
-                <div className="text-muted-foreground">No zones found</div>
-                {error && <div className="text-muted-foreground">{error}</div>}
-              </>
+          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
+            <p className="font-serif text-2xl italic text-muted-foreground">
+              {zones.length === 0
+                ? 'No zones linked yet.'
+                : 'Nothing matches that filter.'}
+            </p>
+            {error && (
+              <p className="mt-3 font-mono text-[11px] text-destructive">! {error}</p>
             )}
-          </>
+          </div>
         )}
-      </div>
+      </section>
+    </main>
+  );
+}
+
+function StackField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Label className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        {label}
+      </Label>
+      {children}
     </div>
   );
 }
